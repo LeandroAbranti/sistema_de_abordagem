@@ -2,6 +2,7 @@
   "name": "client-abordagens",
   "version": "1.0.0",
   "description": "Frontend do sistema de abordagens de trânsito",
+  "homepage": "https://leandroabranti.github.io/sistema_de_abordagem/",
   "private": true,
   "dependencies": {
     "@testing-library/jest-dom": "^5.17.0",
