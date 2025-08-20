@@ -34,6 +34,32 @@ router.post('/', async (req, res) => {
       });
     }
 
+    // Validação de formato da placa (padrão brasileiro)
+    const placaRegex = /^[A-Z]{3}[0-9][A-Z0-9][0-9]{2}$/;
+    const placaLimpa = placaVeiculo.replace(/[^A-Z0-9]/g, '').toUpperCase();
+    if (!placaRegex.test(placaLimpa)) {
+      return res.status(400).json({ 
+        error: 'Formato de placa inválido' 
+      });
+    }
+
+    // Validação de CPF (se fornecido)
+    if (cpfCondutor && !/^\d{11}$/.test(cpfCondutor.replace(/[^0-9]/g, ''))) {
+      return res.status(400).json({ 
+        error: 'CPF deve conter 11 dígitos' 
+      });
+    }
+
+    // Validação de CNH (se fornecida)
+    if (cnhCondutor && !/^\d{11}$/.test(cnhCondutor.replace(/[^0-9]/g, ''))) {
+      return res.status(400).json({ 
+        error: 'CNH deve conter 11 dígitos' 
+      });
+    }
+
+    // Sanitização de observações (limitar tamanho e remover caracteres perigosos)
+    const observacoesSanitizadas = observacoes ? observacoes.substring(0, 500).replace(/<[^>]*>/g, '') : '';
+
     // Verificar se a blitz existe e está ativa
     const blitz = await getBlitzById(parseInt(blitzId));
     if (!blitz) {
@@ -53,14 +79,14 @@ router.post('/', async (req, res) => {
     const novaAbordagem = await addAbordagem({
       blitzId: parseInt(blitzId),
       matriculaAgente: req.user.matricula,
-      placaVeiculo: placaVeiculo.toUpperCase(),
-      cpfCondutor: cpfCondutor || null,
-      cnhCondutor: cnhCondutor || null,
-      testeEtilometro: testeEtilometro || false,
-      veiculoRemovido: veiculoRemovido || false,
-      autuacao: autuacao || false,
-      artigosCodigo: artigosCodigo || [],
-      observacoes: observacoes || '',
+      placaVeiculo: placaLimpa,
+      cpfCondutor: cpfCondutor ? cpfCondutor.replace(/[^0-9]/g, '') : null,
+      cnhCondutor: cnhCondutor ? cnhCondutor.replace(/[^0-9]/g, '') : null,
+      testeEtilometro: Boolean(testeEtilometro),
+      veiculoRemovido: Boolean(veiculoRemovido),
+      autuacao: Boolean(autuacao),
+      artigosCodigo: Array.isArray(artigosCodigo) ? artigosCodigo.slice(0, 10) : [],
+      observacoes: observacoesSanitizadas,
       dataAbordagem: new Date().toISOString()
     });
 

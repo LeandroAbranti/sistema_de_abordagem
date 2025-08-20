@@ -79,9 +79,9 @@ const createAdminUser = async () => {
       return true;
     }
 
-    // Criar hash da senha
-    const adminPassword = '699235Le!';
-    const hashedPassword = await bcrypt.hash(adminPassword, 12);
+    // Criar hash da senha (usar variável de ambiente ou padrão temporário)
+  const adminPassword = process.env.ADMIN_PASSWORD || 'TempAdmin123!';
+  const hashedPassword = await bcrypt.hash(adminPassword, 12);
 
     // Inserir administrador
     await database.run(

@@ -11,10 +11,10 @@ async function init() {
     console.log('✅ Sistema inicializado com sucesso!');
     console.log('');
     console.log('🔐 Usuário Administrador criado:');
-    console.log('   Matrícula: 257');
-    console.log('   Senha: 699235Le!');
-    console.log('');
-    console.log('⚠️  IMPORTANTE: Em produção, altere esta senha imediatamente!');
+  console.log('   Matrícula: 257');
+  console.log('   Senha: [Definida via variável ADMIN_PASSWORD ou padrão temporário]');
+  console.log('');
+  console.log('⚠️  IMPORTANTE: Configure ADMIN_PASSWORD no .env e altere em produção!');
     console.log('');
     console.log('🚀 Execute "npm run dev" para iniciar o sistema');
     

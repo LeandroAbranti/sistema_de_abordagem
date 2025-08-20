@@ -1,6 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const { authenticateToken, requireAdmin, hashPassword } = require('../utils/auth');
+const { logger } = require('../utils/logger');
+const { createBackup, listBackups, restoreBackup } = require('../utils/backup');
+const { generateConfigReport } = require('../utils/productionValidator');
 const { 
   getUsuarios, 
   addUsuario, 
@@ -22,6 +25,148 @@ router.get('/usuarios', async (req, res) => {
       const { senha, ...usuarioSemSenha } = u;
       return usuarioSemSenha;
     });
+
+// === ROTAS DE BACKUP ===
+
+// Listar backups disponíveis
+router.get('/backups', async (req, res) => {
+  try {
+    const backups = listBackups();
+    
+    logger.adminAction(req.user.matricula, 'list_backups', 'system', {
+      ip: req.ip || req.connection.remoteAddress,
+      backupCount: backups.length
+    });
+    
+    res.json({
+      message: 'Backups listados com sucesso',
+      backups
+    });
+  } catch (error) {
+    logger.error('Error listing backups', {
+      error: error.message,
+      adminId: req.user.matricula,
+      ip: req.ip || req.connection.remoteAddress
+    });
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
+// Obter relatório completo de configuração
+router.get('/security/report', async (req, res) => {
+  try {
+    const report = generateConfigReport();
+    
+    logger.adminAction(req.user.matricula, 'view_security_report', 'system', {
+      ip: req.ip || req.connection.remoteAddress,
+      securityScore: report.security.percentage
+    });
+    
+    res.json({
+      message: 'Relatório de segurança gerado',
+      report
+    });
+  } catch (error) {
+    logger.error('Error generating security report', {
+      error: error.message,
+      adminId: req.user.matricula,
+      ip: req.ip || req.connection.remoteAddress
+    });
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
+// Criar backup manual
+router.post('/backups', async (req, res) => {
+  try {
+    const backupPath = createBackup();
+    
+    if (backupPath) {
+      logger.adminAction(req.user.matricula, 'create_backup', 'database', {
+        ip: req.ip || req.connection.remoteAddress,
+        backupPath
+      });
+      
+      res.json({
+        message: 'Backup criado com sucesso',
+        backupPath
+      });
+    } else {
+      res.status(500).json({ error: 'Falha ao criar backup' });
+    }
+  } catch (error) {
+    logger.error('Error creating backup', {
+      error: error.message,
+      adminId: req.user.matricula,
+      ip: req.ip || req.connection.remoteAddress
+    });
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
+// Restaurar backup
+router.post('/backups/:filename/restore', async (req, res) => {
+  try {
+    const { filename } = req.params;
+    const success = restoreBackup(filename);
+    
+    if (success) {
+      logger.adminAction(req.user.matricula, 'restore_backup', 'database', {
+        ip: req.ip || req.connection.remoteAddress,
+        backupFilename: filename,
+        severity: 'critical'
+      });
+      
+      res.json({
+        message: 'Backup restaurado com sucesso',
+        filename
+      });
+    } else {
+      res.status(500).json({ error: 'Falha ao restaurar backup' });
+    }
+  } catch (error) {
+    logger.error('Error restoring backup', {
+      error: error.message,
+      adminId: req.user.matricula,
+      backupFilename: req.params.filename,
+      ip: req.ip || req.connection.remoteAddress
+    });
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
+// === ROTAS DE LOGS DE SEGURANÇA ===
+
+// Obter estatísticas de segurança
+router.get('/security/stats', async (req, res) => {
+  try {
+    // Esta é uma implementação básica - em produção, você poderia
+    // analisar os arquivos de log para gerar estatísticas reais
+    const stats = {
+      totalLoginAttempts: 0,
+      failedLoginAttempts: 0,
+      rateLimitViolations: 0,
+      corsViolations: 0,
+      lastUpdate: new Date().toISOString()
+    };
+    
+    logger.adminAction(req.user.matricula, 'view_security_stats', 'system', {
+      ip: req.ip || req.connection.remoteAddress
+    });
+    
+    res.json({
+      message: 'Estatísticas de segurança obtidas',
+      stats
+    });
+  } catch (error) {
+    logger.error('Error getting security stats', {
+      error: error.message,
+      adminId: req.user.matricula,
+      ip: req.ip || req.connection.remoteAddress
+    });
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
     
     res.json(usuarios);
   } catch (error) {
@@ -42,6 +187,23 @@ router.post('/usuarios', async (req, res) => {
       });
     }
 
+    // Validação de matrícula (apenas números)
+    if (!/^\d+$/.test(matricula)) {
+      return res.status(400).json({ 
+        error: 'Matrícula deve conter apenas números' 
+      });
+    }
+
+    // Validação de senha forte
+    if (senha.length < 8) {
+      return res.status(400).json({ 
+        error: 'Senha deve ter pelo menos 8 caracteres' 
+      });
+    }
+
+    // Sanitização do nome (remover caracteres especiais perigosos)
+    const nomeSanitizado = nome.trim().substring(0, 100).replace(/<[^>]*>/g, '');
+
     // Verificar se matrícula já existe
     const usuarioExistente = await getUsuarioByMatricula(matricula);
     if (usuarioExistente) {
@@ -57,7 +219,7 @@ router.post('/usuarios', async (req, res) => {
     const novoUsuario = await addUsuario({
       matricula,
       senha: senhaHash,
-      nome,
+      nome: nomeSanitizado,
       isAdmin: false,
       ativo: true
     });

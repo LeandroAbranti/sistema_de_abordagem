@@ -151,6 +151,24 @@ const getAbordagensByBlitz = async (blitzId) => {
   }
 };
 
+const getAbordagemById = async (id) => {
+  try {
+    return await database.get('SELECT * FROM abordagens WHERE id = ?', [id]);
+  } catch (error) {
+    console.error('Erro ao buscar abordagem por ID:', error);
+    return null;
+  }
+};
+
+const getAbordagensByMatricula = async (matricula) => {
+  try {
+    return await database.all('SELECT * FROM abordagens WHERE matriculaAgente = ? ORDER BY dataCriacao DESC', [matricula]);
+  } catch (error) {
+    console.error('Erro ao buscar abordagens por matrícula:', error);
+    return [];
+  }
+};
+
 module.exports = {
   initializeDatabase,
   getUsuarios,
@@ -162,5 +180,7 @@ module.exports = {
   updateBlitz,
   getUsuarioByMatricula,
   getBlitzById,
-  getAbordagensByBlitz
+  getAbordagensByBlitz,
+  getAbordagemById,
+  getAbordagensByMatricula
 };

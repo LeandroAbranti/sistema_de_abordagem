@@ -1,10 +1,34 @@
 const express = require('express');
+const rateLimit = require('express-rate-limit');
 const router = express.Router();
 const { hashPassword, verifyPassword, generateToken } = require('../utils/auth');
 const { getUsuarioByMatricula, addUsuario } = require('../data/database');
+const { logger } = require('../utils/logger');
+
+// Rate limiter específico para login (mais restritivo)
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutos
+  max: 5, // máximo 5 tentativas por IP
+  message: {
+    error: 'Muitas tentativas de login. Tente novamente em 15 minutos.'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (req, res) => {
+    const ip = req.ip || req.connection.remoteAddress;
+    logger.rateLimitExceeded(ip, '/api/auth/login', {
+      userAgent: req.get('User-Agent'),
+      matricula: req.body.matricula
+    });
+    
+    res.status(429).json({
+      error: 'Muitas tentativas de login. Tente novamente em 15 minutos.'
+    });
+  }
+});
 
 // Rota de login
-router.post('/login', async (req, res) => {
+router.post('/login', loginLimiter, async (req, res) => {
   try {
     const { matricula, senha } = req.body;
 
@@ -15,16 +39,27 @@ router.post('/login', async (req, res) => {
       });
     }
 
+    const ip = req.ip || req.connection.remoteAddress;
+    const userAgent = req.get('User-Agent');
+
     // Buscar usuário pela matrícula
     const usuario = await getUsuarioByMatricula(matricula);
     
     if (!usuario) {
+      logger.loginAttempt(ip, matricula, false, {
+        reason: 'user_not_found',
+        userAgent
+      });
       return res.status(401).json({ 
         error: 'Matrícula ou senha inválidos' 
       });
     }
 
     if (!usuario.ativo) {
+      logger.loginAttempt(ip, matricula, false, {
+        reason: 'user_inactive',
+        userAgent
+      });
       return res.status(401).json({ 
         error: 'Usuário inativo' 
       });
@@ -34,6 +69,10 @@ router.post('/login', async (req, res) => {
     const senhaValida = await verifyPassword(senha, usuario.senha);
     
     if (!senhaValida) {
+      logger.loginAttempt(ip, matricula, false, {
+        reason: 'invalid_password',
+        userAgent
+      });
       return res.status(401).json({ 
         error: 'Matrícula ou senha inválidos' 
       });
@@ -41,6 +80,12 @@ router.post('/login', async (req, res) => {
 
     // Gerar token JWT
     const token = generateToken(usuario.matricula, usuario.isAdmin);
+
+    // Log de login bem-sucedido
+    logger.loginAttempt(ip, matricula, true, {
+      isAdmin: usuario.isAdmin,
+      userAgent
+    });
 
     // Retornar dados do usuário (sem a senha)
     const { senha: _, ...usuarioSemSenha } = usuario;
@@ -52,7 +97,15 @@ router.post('/login', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Erro no login:', error);
+    const ip = req.ip || req.connection.remoteAddress;
+    logger.error('Login error', {
+      error: error.message,
+      stack: error.stack,
+      ip,
+      matricula: req.body.matricula,
+      userAgent: req.get('User-Agent')
+    });
+    
     res.status(500).json({ 
       error: 'Erro interno do servidor' 
     });

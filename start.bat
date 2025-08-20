@@ -55,7 +55,7 @@ echo 🚀 Iniciando o sistema...
 echo.
 echo 📱 Frontend: http://localhost:3000
 echo 🔧 Backend:  http://localhost:5000
-echo 🔐 Login Admin: Matrícula 257, Senha 699235Le!
+echo 🔐 Login Admin: Matrícula 257, Senha definida no arquivo .env
 echo.
 echo Pressione Ctrl+C para parar o sistema
 echo.

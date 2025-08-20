@@ -14,10 +14,9 @@ Sistema completo para gerenciamento de blitz de trânsito e registro de abordage
 
 ## 🔐 Acesso Administrativo
 
-- **Matrícula**: 257
-- **Senha**: 699235Le!
+O sistema cria automaticamente um usuário administrador padrão na primeira execução.
 
-⚠️ **IMPORTANTE**: Esta senha é apenas para demonstração. Em produção, altere imediatamente!
+⚠️ **IMPORTANTE**: As credenciais padrão devem ser alteradas imediatamente em produção por questões de segurança!
 
 ## 🚀 Instalação
 
@@ -79,13 +78,13 @@ npm run client    # Frontend na porta 3000
 
 - **Frontend**: http://localhost:3000
 - **Backend**: http://localhost:5000
-- **Login Admin**: Matrícula 257, Senha 699235Le!
+- **Login Admin**: Use as credenciais do administrador padrão
 
 ## 📱 Como Usar
 
 ### 1. Primeiro Acesso (Administrador)
 
-1. Faça login com a matrícula 257 e senha 699235Le!
+1. Faça login com as credenciais do administrador padrão
 2. Acesse o painel administrativo
 3. Crie usuários para os agentes de trânsito
 4. Crie a primeira blitz de trânsito

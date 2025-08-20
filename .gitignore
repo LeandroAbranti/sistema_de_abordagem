@@ -172,6 +172,15 @@ public
 tmp/
 temp/
 
+# Backup files (may contain sensitive data)
+server/backups/
+*.backup
+*.bak
+
+# Security logs (may contain sensitive information)
+security.log
+security-*.log
+
 # Logs
 logs
 *.log
