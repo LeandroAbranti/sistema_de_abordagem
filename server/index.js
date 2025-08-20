@@ -61,8 +61,8 @@ app.use(limiter);
 
 // Middleware para CORS com configuração aprimorada
 const allowedOrigins = process.env.NODE_ENV === 'production' 
-  ? (process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : ['https://seu-dominio.com'])
-  : ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:5000', 'http://127.0.0.1:5000'];
+  ? (process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : ['https://leandroabranti.github.io'])
+  : ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:5000', 'http://127.0.0.1:5000', 'https://leandroabranti.github.io'];
 
 app.use(cors({
   origin: function (origin, callback) {
