@@ -9,7 +9,7 @@ if (!fs.existsSync(backupDir)) {
 }
 
 // Caminho do banco de dados
-const dbPath = path.join(__dirname, '../data/database.sqlite');
+const dbPath = path.join(__dirname, '../data/abordagens.db');
 
 // Função para criar backup
 const createBackup = () => {
