@@ -162,7 +162,7 @@ const getAbordagemById = async (id) => {
 
 const getAbordagensByMatricula = async (matricula) => {
   try {
-    return await database.all('SELECT * FROM abordagens WHERE matriculaAgente = ? ORDER BY dataCriacao DESC', [matricula]);
+    return await database.all('SELECT * FROM abordagens WHERE agente = ? ORDER BY dataCriacao DESC', [matricula]);
   } catch (error) {
     console.error('Erro ao buscar abordagens por matrícula:', error);
     return [];
